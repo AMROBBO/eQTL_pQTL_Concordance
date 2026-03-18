@@ -202,6 +202,6 @@ eQTL_concordance_table <- make_concordance_table(eQTL_concordance) %>%
 # Save - eQTLs
 #######################################################
 
-fwrite(eQTL_concordance, "data/Coloc/eQTL_concordance.csv")
+fwrite(eQTL_concordance, file.path(results_data, "eQTL_concordance.csv"))
 
-gtsave(eQTL_concordance_table, "data/Coloc/eQTL_concordance.png")
+gtsave(eQTL_concordance_table, file.path(docs_data, "eQTL_concordance.png"))

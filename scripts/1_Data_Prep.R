@@ -72,7 +72,7 @@ pQTL_rsIDs <- data.frame()
 
 # Read, clean, and combine all pQT files
 
-for (f in pQTL_files){
+for (f in pQTL_files[1461:2921]){
   if (file.size(f) > 0){
     pQTL_data <- fread(f)
     colnames(pQTL_data) <- header
