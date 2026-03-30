@@ -50,7 +50,7 @@ eQTL_raw <- fread(
   file.path(raw_data, "Raw_eQTL_data/2019-12-11-cis-eQTLsFDR-ProbeLevel-CohortInfoRemoved-BonferroniAdded.txt"),
   data.table = F)            # eQTL data
 
-# 127,341,798 eQTL measures
+# 127,341,798 eQTL measures for 19,127 genes
 
 # Effect allele frequencies (EAFs)
 
@@ -72,7 +72,7 @@ pQTL_rsIDs <- data.frame()
 
 # Read, clean, and combine all pQT files
 
-for (f in pQTL_files[1461:2921]){
+for (f in pQTL_files){
   if (file.size(f) > 0){
     pQTL_data <- fread(f)
     colnames(pQTL_data) <- header
@@ -103,8 +103,7 @@ for (f in pQTL_files[1461:2921]){
   }
 }
 
-# XXX pQTL measures for XXX proteins
-# Look at how many protein eQTL measures there are
+# 104,867,846 pQTL measures for 2,831 proteins
 
 # Assigning dbSNP rsIDS
 
@@ -118,7 +117,7 @@ for(f in olink){
 pQTL_mapped <- merge(all_pQTLs, pQTL_rsIDs, by = "ID")
 pQTL_mapped <- pQTL_mapped[grep("rs", pQTL_mapped$rsid), ] # Only keep SNPs with rsIDs
 
-# XXX pQTL measures for XXX proteins
+# 99,797,456 pQTL measures for 2,831 proteins
 
 #######################################################
 # Format eQTL data
@@ -128,7 +127,7 @@ pQTL_mapped <- pQTL_mapped[grep("rs", pQTL_mapped$rsid), ] # Only keep SNPs with
 
 eQTL_merged <- merge(eQTL_raw, eQTL_eaf, by = "SNP")
 
-# XXX eQTL measures for XXX proteins
+# 127,341,798 eQTL measures for 19,127 proteins
 
 #Identify palindromic SNPs
 
@@ -180,8 +179,10 @@ eQTLs$NAME <- paste(eQTLs$GeneSymbol, eQTLs$SNP, sep = ":")
 colnames(pQTLs)[1:22] <- paste0(colnames(pQTLs)[1:22], "_pQTLs")
 colnames(eQTLs)[1:15] <- paste0(colnames(eQTLs)[1:15], "_eQTLs")
 
-#Join two datasets based on unique identifiers: keep only matched SNPs
+eQTLs <- fread(file.path(interim_data, "eQTL_full.csv"))
+pQTLs <- fread(file.path(interim_data, "pQTL_full.csv"))
 
+#Join two datasets based on unique identifiers: keep only matched SNPs
 joined <- pQTLs[eQTLs, on = "NAME", nomatch = 0]
 
 # XXX QTL pairs for XXX proteins
