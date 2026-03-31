@@ -179,9 +179,6 @@ eQTLs$NAME <- paste(eQTLs$GeneSymbol, eQTLs$SNP, sep = ":")
 colnames(pQTLs)[1:22] <- paste0(colnames(pQTLs)[1:22], "_pQTLs")
 colnames(eQTLs)[1:15] <- paste0(colnames(eQTLs)[1:15], "_eQTLs")
 
-eQTLs <- fread(file.path(interim_data, "eQTL_full.csv"))
-pQTLs <- fread(file.path(interim_data, "pQTL_full.csv"))
-
 #Join two datasets based on unique identifiers: keep only matched SNPs
 joined <- pQTLs[eQTLs, on = "NAME", nomatch = 0]
 
