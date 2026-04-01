@@ -11,6 +11,7 @@
 
 library(dotenv)
 library(data.table)          # Fast file reading/writing
+library(R.utils)
 library(TwoSampleMR)         # Mendelian randomisation tools
 library(dplyr)               # Data wrangling
 library(magrittr)            # Piping
