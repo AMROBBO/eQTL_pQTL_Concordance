@@ -42,7 +42,7 @@ threshold <- 5*10^-8
 
 filtered <- joined %>% filter(PVAL_pQTLs < threshold | Pvalue_eQTLs < threshold)
 
-# XXX QTL pairs for XXX proteins
+# 1,544,799 QTL pairs for 2,023 proteins
 
 #######################################################
 #Formatting
@@ -66,7 +66,7 @@ pQTL_formatted <- format_data(data.frame(filtered),
 )
 pQTL_formatted$id.exposure <- pQTL_formatted$exposure
 
-# XXX pQTLs for XXX proteins
+# 1,541,819 pQTLs for 2,023 proteins
 
 eQTL_formatted <- format_data(data.frame(filtered), 
                               type = "outcome", 
@@ -86,7 +86,7 @@ eQTL_formatted <- format_data(data.frame(filtered),
 )
 eQTL_formatted$id.outcome <- eQTL_formatted$outcome
 
-# XXX eQTLs for XXX proteins
+# 1,541,819 eQTLs for 2,023 proteins
 
 #######################################################
 #Harmonise
@@ -96,7 +96,7 @@ harmonised <- TwoSampleMR::harmonise_data(pQTL_formatted, eQTL_formatted) %>%
   filter(outcome == exposure) %>% 
   filter(mr_keep == TRUE)
 
-# XXX QTL pairs for XXX proteins
+# 1,512,553 QTL pairs for 2,023 proteins
 
 #######################################################
 # Prepare harmonised dataset for input into pipeline
@@ -129,13 +129,13 @@ harmonised$keep_alleles <- ifelse(harmonised$effect_allele.exposure %in% alleles
                                   TRUE,
                                   FALSE)
 harmonised <- harmonised[harmonised$keep_alleles == TRUE, ]
-harmonised$keep_alleles<-NULL
+harmonised$keep_alleles <- NULL
 
 for (i in 1:nrow(harmonised)){
   harmonised$SNP[i] <- unlist(strsplit(harmonised$SNP[i], split = ":"))[2]
 }
 
-# XXX QTL pairs for XXX proteins
+# 1,512,553 QTL pairs for 2,023 proteins
 
 #######################################################
 # Save 

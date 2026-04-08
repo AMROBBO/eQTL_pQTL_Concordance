@@ -12,7 +12,7 @@
 library(dotenv)
 library(data.table)          # Fast file reading/writing
 library(R.utils)
-library(TwoSampleMR)         # Mendelian randomisation tools
+#library(TwoSampleMR)         # Mendelian randomisation tools
 library(dplyr)               # Data wrangling
 library(magrittr)            # Piping
 library(gt)                  # Table formatting
@@ -183,7 +183,7 @@ colnames(eQTLs)[1:15] <- paste0(colnames(eQTLs)[1:15], "_eQTLs")
 #Join two datasets based on unique identifiers: keep only matched SNPs
 joined <- pQTLs[eQTLs, on = "NAME", nomatch = 0]
 
-# XXX QTL pairs for XXX proteins
+# 13,314,372 QTL pairs for 2,113 proteins
 
 #######################################################
 # Save
