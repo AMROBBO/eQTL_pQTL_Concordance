@@ -46,7 +46,7 @@ QTLs <- fread(file.path(results_data, "pQTL_concordance.csv"))
 #Read in Olink Data
 #######################################################
 
-olink_files <- list.files(file.path(raw_data, "olink", full.names = T))
+olink_files <- list.files(file.path(raw_data, "olink"), pattern = "Olink", full.names = T)
 
 #######################################################
 #Labeling QTL data for Protein Function

@@ -12,7 +12,6 @@
 library(dotenv)
 library(data.table)          # Fast file reading/writing
 library(R.utils)
-#library(TwoSampleMR)         # Mendelian randomisation tools
 library(dplyr)               # Data wrangling
 library(magrittr)            # Piping
 library(gt)                  # Table formatting
@@ -40,7 +39,7 @@ pQTL_files <- list.files(
 # dbSNP rsID maps
 
 olink <- list.files(
-  file.path(raw_data, "SNP RSID maps"), 
+  file.path(raw_data, "olink/SNP RSID maps"), 
   full.names = TRUE)[1:24]
 
 #######################################################

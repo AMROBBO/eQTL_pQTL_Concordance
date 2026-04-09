@@ -461,6 +461,9 @@ old_warn <- getOption("warn")
 options(warn = 1)
 
 for (i in unique(harmonised$exposure)){
+
+  print(paste0("Processing gene: ", i))
+
   Gene_data <- harmonised[harmonised$exposure == i,]
   
   # Step 2: Get LD matrix
