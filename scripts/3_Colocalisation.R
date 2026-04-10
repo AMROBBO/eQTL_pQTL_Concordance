@@ -414,7 +414,7 @@ do_susie_finemap <- function(harmon.df, ld.mat){
     LD = ld.mat$outcome_LD_data
   )
   
-  outcomesusie <- runsusie(outcomeforcoloc)    
+  outcomesusie <- coloc::runsusie(outcomeforcoloc)    
   print(summary(outcomesusie))
   
   #Return the susie finemapping results.
@@ -514,23 +514,65 @@ for (i in unique(harmonised$exposure)){
   
   ld.mat <- ld_reg
   
-  susie.finemap.result <- do_susie_finemap(harmon.df, ld.mat)
+  ## Susie can only be run on more than 1 SNP
   
-  # Step 8: Perform susie coloc on finemap dataset
+  if(nrow(harmon.df) > 1){
+    
+    susie.finemap.result <- do_susie_finemap(harmon.df, ld.mat)
   
-  coloc_out <- do_susie_coloc(susie.finemap.result)
+    # Step 8: Perform susie coloc on finemap dataset
+  
+    coloc_out <- do_susie_coloc(susie.finemap.result)
+    
+  } else{
+    
+    exposureforcoloc <- list(
+      beta = harmon.df$LDflip.beta.exposure,
+      varbeta = harmon.df$se.exposure^2,
+      snp = harmon.df$LDpanel.ID,
+      position = harmon.df$pos.exposure,
+      MAF = ifelse(harmon.df$eaf.exposure > 0.5, 1 - harmon.df$eaf.exposure, harmon.df$eaf.exposure), 
+      type = "quant",
+      N = median(harmon.df$samplesize.exposure)
+    )
+    
+    outcomeforcoloc <- list(
+      beta = harmon.df$LDflip.beta.outcome,
+      varbeta = harmon.df$se.outcome^2,
+      snp = harmon.df$LDpanel.ID,
+      position = harmon.df$pos.exposure,
+      MAF =ifelse(harmon.df$eaf.outcome > 0.5, 1 - harmon.df$eaf.outcome, harmon.df$eaf.outcome), 
+      type = "quant",
+      N = median(harmon.df$samplesize.outcome)
+    )
+    
+    coloc_out <- coloc::coloc.abf(exposureforcoloc, outcomeforcoloc)
+    
+    if(!is.null(coloc_out)){
+      print(coloc_out$summary)
+      
+      coloc_out$summary <- as.data.frame(t(coloc_out$summary))
+      
+    }
+  }
   
   # Step 9: Extracting SNPs with H4 > 0.7
   
   if (!is.null(coloc_out$summary)){
+    
     strong_pairs <- subset(coloc_out$summary, PP.H4.abf > 0.7)
     
-    print("Credible set pairs with strong colocalization:")
-    print(strong_pairs)
+    if (nrow(strong_pairs) > 0){
+      print("Credible set pairs with strong colocalization:")
+      print(strong_pairs)
     
-    strong_pairs$gene <- i
+      strong_pairs$gene <- i
     
-    top_coloc_snps <- rbind(top_coloc_snps, strong_pairs)
+      top_coloc_snps <- rbind(top_coloc_snps, strong_pairs)
+      
+    } else {
+      print(paste0(i, " has no common causal variants with H4 > 0.7"))
+    }
   } else {
     print(paste0(i, " has no common causal variants"))
   }
