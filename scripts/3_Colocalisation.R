@@ -87,6 +87,11 @@ LDref_harmon <- function(Gene_1, myld){
                                  "TRUE" = "T"),
                    df1$A1) # For some reason one of the panels has TRUE as an allele, I presume this is T? CACNA1C
   
+  df1$A2 <- ifelse(df1$A2 == "TRUE", 
+                   dplyr::recode(df1$A2, 
+                                 "TRUE" = "T"),
+                   df1$A2) # RNF31 has TRUE as an allele
+  
   #Merge the harmon data.
   df2 <- merge(x=df1, y=Gene_1, by="SNP")
   
