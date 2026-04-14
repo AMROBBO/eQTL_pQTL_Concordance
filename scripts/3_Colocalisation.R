@@ -573,7 +573,9 @@ for (i in unique(harmonised$exposure)){
     
       strong_pairs$gene <- i
     
-      top_coloc_snps <- rbind(top_coloc_snps, strong_pairs)
+      ## Save
+
+      fwrite(strong_pairs, file.path(interim_data, "coloc_output.csv"), append = T)
       
     } else {
       print(paste0(i, " has no common causal variants with H4 > 0.7"))
@@ -581,10 +583,10 @@ for (i in unique(harmonised$exposure)){
   } else {
     print(paste0(i, " has no common causal variants"))
   }
+
+  tmp <- tempdir()
+  files <- list.files(tmp, full.names = TRUE)
+  unlink(files, recursive = TRUE)
+  gc()
+
 }
-
-#######################################################
-# Save
-#######################################################
-
-fwrite(top_coloc_snps, file.path(interim_data, "coloc_output.csv"))
