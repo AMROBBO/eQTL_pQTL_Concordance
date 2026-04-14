@@ -457,11 +457,6 @@ do_susie_coloc <- function(susie.finemap.result){
 
 path_to_bfile <- file.path(raw_data, "1000gp/EUR")
 
-top_coloc_snps <- data.frame(matrix(ncol = 11, nrow = 0))
-col_names <- c("nsnps", "hit1", "hit2", "PP.H0.abf", "PP.H1.abf", "PP.H2.abf", "PP.H3.abf",
-               "PP.H4.abf","idx1", "idx2", "gene")
-colnames(top_coloc_snps) <- col_names
-
 old_warn <- getOption("warn")
 options(warn = 1)
 
