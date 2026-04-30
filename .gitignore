@@ -50,3 +50,4 @@ rsconnect/
 
 # Config files
 config.env
+.positai
