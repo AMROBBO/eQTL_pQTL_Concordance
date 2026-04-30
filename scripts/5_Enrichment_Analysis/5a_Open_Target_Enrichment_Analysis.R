@@ -2,11 +2,13 @@
 # 5a. Enrichment Analysis of Colocalised QTL Pairs
 # Datasets:
 #   a. Open Targets: Baseline Expression (Blood vs non blood)
-#   b. Human Protein Atlas (HPA): Protein Class annotation
-#   c. Olink: Protein Class annotation
-#   d. Reactome: Pathway annotation
-#   e. Ensembl VEP: Variant effect annotation pipeline (inputs and outputs)
-
+##
+# As there is little variation between concordance of datasets selected on pQTLs
+# and eQTLs and those with all available independent SNPs and those with only 1
+# SNP per gene, the rest of the enrichment analysis is carried out on all available
+# independent SNPs selected from pQTL data:
+# pQTL_concordance.csv from 4_Naive_Concordance_Test.R
+##
 #######################################################
 
 #######################################################
@@ -37,14 +39,17 @@ load_dot_env("config.env")
 
 raw_data <- Sys.getenv("rawdatadir")
 interim_data <- Sys.getenv("interimdatadir")
-results_data <- Sys.getenv("resultsdir")
+processed_data <- Sys.getenv("processeddatadir")
 docs_data <- Sys.getenv("docsdir")
 
 #######################################################
 # Read in colocalised QTL pairs 
 #######################################################
 
-QTLs <- fread(file.path(results_data, "pQTL_concordance.csv"))
+QTLs <- fread(file.path(processed_data, "Concordance/pQTL_concordance.csv"))
+
+# Gene names
+gene_names <- fread(file.path(interim_data, "gene_names.csv"))
 
 #######################################################
 # Open Targets Data: Baseline expression (blood vs non-blood)
@@ -63,32 +68,37 @@ for (f in OT_files[-1]){
 }
 
 #######################################################
+# Labeling QTL data with Ensembl gene names
+#######################################################
+
+colnames(gene_names) <- c("id", "Gene_name")
+
+QTLs <- QTLs %>% 
+  left_join(gene_names, by = "id")
+
+#######################################################
 # Labeling QTL data for Blood Expression
 #######################################################
 
 QTLs_OT <- QTLs %>%
-  dplyr::select("SNP", "id.outcome", "gene.outcome", "type") %>% 
-  filter(gene.outcome %in% OT_data$id) # Filter for QTLs in OT data
+  dplyr::select("rsid", "id", "Gene_name", "type") %>% 
+  filter(Gene_name %in% OT_data$id) # Filter for QTLs in OT data
 
 OT_data <- OT_data %>% 
-  filter(id %in% QTLs_OT$gene.outcome)
+  filter(id %in% QTLs_OT$Gene_name)
 
-# Ordering genes for consistent iteration
-
-OT_data <- OT_data[order(OT_data$id), ]
-QTLs_OT <- QTLs_OT[order(QTLs_OT$gene.outcome), ]
+QTLs_OT$blood_expression <- NA
+QTLs_OT$nonblood_expression <- NA
+QTLs_OT$top_organ <- NA
 
 #Extract top blood and non-blood expression and most expressed organ for each gene
 
-for (i in 1:nrow(OT_data)){
+for (i in unique(QTLs_OT$Gene_name)){  
   
-  #Making sure the genes match(if they don't, STOP)
+  QTL_row <- which(QTLs_OT$Gene_name == i)
+  OT_row <- which(OT_data$id == i)
   
-  if (OT_data$id[i] != QTLs_OT$gene.outcome[i]){
-    stop("Gene mismatch detected!")
-  }
-  
-  OT_table <- as.data.frame(OT_data[[2]][[i]])
+  OT_table <- as.data.frame(OT_data[[2]][[OT_row]])
   OT_rna <- as.data.frame(OT_table[[5]])
   
   bexp <- character()
@@ -102,9 +112,9 @@ for (i in 1:nrow(OT_data)){
     }
   }
   
-  QTLs_OT$blood_expression[i] <- max(as.numeric(bexp))                                          # Highest blood associated expression
-  QTLs_OT$nonblood_expression[i] <- max(as.numeric(bnonexp))                                    # Highest non blood associated expression
-  QTLs_OT$top_organ[i] <- OT_table$organs[grep(max(OT_table$rna$value), OT_table$rna$value)][1] # Top expressed organ
+  QTLs_OT$blood_expression[QTL_row] <- max(as.numeric(bexp))                                          # Highest blood associated expression
+  QTLs_OT$nonblood_expression[QTL_row] <- max(as.numeric(bnonexp))                                    # Highest non blood associated expression
+  QTLs_OT$top_organ[QTL_row] <- OT_table$organs[grep(max(OT_table$rna$value), OT_table$rna$value)][1] # Top expressed organ
   
   print(i)
 }
@@ -123,16 +133,14 @@ for (i in thresholds){
 # Save Labelled QTL
 
 QTLs_OT <- QTLs_OT %>%
-  dplyr::select(SNP, id.outcome, type, blood_expression, expression_threshold) %>% 
   rename(
-    `Protein:rsID` = SNP,
-    Protein = id.outcome,
+    Protein = id,
     Concordance_Group = type,
     `Blood Expression/TPM` = blood_expression,
     Threshold = expression_threshold
   )
 
-fwrite(QTLs_OT, file.path(results_data, "Open_Target/OT_labelled_QTLs.csv"))
+fwrite(QTLs_OT, file.path(processed_data, "Open_Target/OT_labelled_QTLs.csv"))
 
 #######################################################
 #Creating OT Summary Table
@@ -194,7 +202,8 @@ OT_prop_plot <- ggplot(OT_plot, aes(x = blood_plot, y = prop_plot, fill = type_p
 
 # Open Target Plot 1b - Con/Dis groups only
 
-OT_plot_discon <- OT_plot %>% filter(type_plot == "Concordant" | type_plot == "Discordant")
+OT_plot_discon <- OT_plot %>% 
+  filter(type_plot == "Concordant" | type_plot == "Discordant")
 
 OT_prop_plot_discon <- ggplot(OT_plot_discon, aes(x=blood_plot, y=prop_plot, fill=type_plot)) + 
   geom_bar(position="dodge", stat="identity") +

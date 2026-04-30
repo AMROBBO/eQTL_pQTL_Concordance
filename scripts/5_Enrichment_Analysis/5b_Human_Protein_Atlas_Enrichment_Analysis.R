@@ -2,7 +2,13 @@
 # 5b. Enrichment Analysis of Colocalised QTL Pairs
 # Datasets:
 #   b. Human Protein Atlas (HPA): Protein Class annotation
-
+##
+# As there is little variation between concordance of datasets selected on pQTLs
+# and eQTLs and those with all available independent SNPs and those with only 1
+# SNP per gene, the rest of the enrichment analysis is carried out on all available
+# independent SNPs selected from pQTL data:
+# pQTL_concordance.csv from 4_Naive_Concordance_Test.R
+##
 #######################################################
 
 #######################################################
@@ -33,14 +39,14 @@ load_dot_env("config.env")
 
 raw_data <- Sys.getenv("rawdatadir")
 interim_data <- Sys.getenv("interimdatadir")
-results_data <- Sys.getenv("resultsdir")
+processed_data <- Sys.getenv("processeddatadir")
 docs_data <- Sys.getenv("docsdir")
 
 #######################################################
 # Read in colocalised QTL pairs 
 #######################################################
 
-QTLs <- fread(file.path(results_data, "pQTL_concordance.csv"))
+QTLs <- fread(file.path(processed_data, "Concordance/pQTL_concordance.csv"))
 
 #######################################################
 #Read in HPA Data
@@ -54,12 +60,12 @@ HPA <- fread(file.path(raw_data, "proteinatlas.tsv")) %>%
 #######################################################
 
 QTLs_HPA <- QTLs %>%
-  dplyr::select("SNP", "id.outcome", "gene.outcome", "type")
-colnames(QTLs_HPA)[3] <- "Ensembl"
+  dplyr::select("rsid", "id", "type")
+colnames(QTLs_HPA)[2] <- "Gene"
 
 #Assigning protein classes to genes based on Ensembl ID
 
-QTLs_HPA <- merge(QTLs_HPA, HPA, by = "Ensembl")
+QTLs_HPA <- merge(QTLs_HPA, HPA, by = "Gene")
 
 #Making a count for which protein classes appear for each QTL
 
@@ -78,7 +84,7 @@ QTLs_HPA <- QTLs_HPA %>%
 
 # Save
 
-fwrite(QTLs_HPA, file.path(results_data, "Human_Protein_Atlas/HPA_labelled_QTLs.csv"))
+fwrite(QTLs_HPA, file.path(processed_data, "Human_Protein_Atlas/HPA_labelled_QTLs.csv"))
 
 #######################################################
 # Creating HPA Summary Table
@@ -86,10 +92,10 @@ fwrite(QTLs_HPA, file.path(results_data, "Human_Protein_Atlas/HPA_labelled_QTLs.
 
 #Separating QTLs into concordance type
 
-HPA_summary <- colSums(QTLs_HPA[QTLs_HPA$type == "concordant", 6:29])
-HPA_summary <- cbind(HPA_summary, colSums(QTLs_HPA[QTLs_HPA$type == "discordant", 6:29]))
-HPA_summary <- cbind(HPA_summary, colSums(QTLs_HPA[QTLs_HPA$type == "eQTL_dropped", 6:29]))
-HPA_summary <- cbind(HPA_summary, colSums(QTLs_HPA[QTLs_HPA$type == "pQTL_dropped", 6:29]))
+HPA_summary <- colSums(QTLs_HPA[QTLs_HPA$type == "concordant", 5:ncol(QTLs_HPA)])
+HPA_summary <- cbind(HPA_summary, colSums(QTLs_HPA[QTLs_HPA$type == "discordant", 5:ncol(QTLs_HPA)]))
+HPA_summary <- cbind(HPA_summary, colSums(QTLs_HPA[QTLs_HPA$type == "eQTL_dropped", 5:ncol(QTLs_HPA)]))
+HPA_summary <- cbind(HPA_summary, colSums(QTLs_HPA[QTLs_HPA$type == "pQTL_dropped", 5:ncol(QTLs_HPA)]))
 
 #Summing number of QTLs in each protein class for each concordance group
 
