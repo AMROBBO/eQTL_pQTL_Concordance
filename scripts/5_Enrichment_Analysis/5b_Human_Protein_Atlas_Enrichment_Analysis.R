@@ -143,8 +143,8 @@ HPA_plot <- HPA_plot %>%
 
 HPA_prop_plot <- ggplot(HPA_plot, aes(fill=type_plot, y=prop_plot, x=`Protein Class`)) + 
   geom_bar(position="dodge", stat="identity") +
-  theme(text = element_text(size=10, family = "Times"),
-        axis.text.x = element_text(size=8, angle=90, hjust = 1, vjust = 0.5)) +
+  theme(text = element_text(size=8, family = "Times"),
+        axis.text.x = element_text(size=8)) +
   labs(y = "Proportion of Concordance Category", x = "Protein Class", fill = "Concordance Category")
 
 #Human Protein Atlas Plot 1b - Con/Dis Groups only
@@ -153,8 +153,8 @@ HPA_plot_discon <- HPA_plot[which(HPA_plot$type_plot == "Concordant" | HPA_plot$
 
 HPA_prop_plot_discon <- ggplot(HPA_plot_discon, aes(fill=type_plot, y=prop_plot, x=`Protein Class`)) + 
   geom_bar(position="dodge", stat="identity") +
-  theme(text = element_text(size=10, family = "Times"),
-        axis.text.x = element_text(size=8, angle=90, hjust = 1, vjust = 0.5)) +
+  theme(text = element_text(size=8, family = "Times"),
+        axis.text.x = element_text(size=8)) +
   labs(y = "Proportion of Concordance Category", x = "Protein Class", fill = "Concordance Category")
 
 #Plotting concordance categories as a proportion of each protein class
@@ -180,13 +180,15 @@ HPA_plot_stacked <- HPA_plot_stacked %>%
                names_to = "type_plot", values_to = "prop_plot") %>% 
   mutate(num_plot = HPA_num$num_plot)
 
+HPA_plot_stacked$num_plot <- gsub("^0$", "", HPA_plot_stacked$num_plot)
+
 #Human Protein Atlas Plot 3 - Stacked plot
 
 HPA_prop_plot_stacked <- ggplot(HPA_plot_stacked, aes(fill=type_plot, y=prop_plot, x=`Protein Class`, label=num_plot)) + 
   geom_bar(position="stack", stat="identity") +
-  theme(text = element_text(size=10, family = "Times"),
-        axis.text.x = element_text(size=8, angle=90, hjust = 1, vjust = 0.5)) +
-  geom_text(size = 3, position = position_stack(vjust = 0.5), check_overlap = TRUE, angle = 90, family = "Times") +
+  theme(text = element_text(size=8, family = "Times"),
+        axis.text.x = element_text(size=8)) +
+  geom_text(size = 2, position = position_stack(vjust = 0.5), family = "Times") +
   labs(y = "Proportion of Protein Class", x = "Protein Class", fill = "Concordance Category")
 
 #######################################################
@@ -196,9 +198,12 @@ HPA_prop_plot_stacked <- ggplot(HPA_plot_stacked, aes(fill=type_plot, y=prop_plo
 ###FIGURE S2
 
 figs2a <- HPA_prop_plot +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  coord_flip()
 
-figs2b <- HPA_prop_plot_stacked
+figs2b <- HPA_prop_plot_stacked +
+  theme(axis.title.y = element_blank()) +
+  coord_flip()
 
 figs2 <- figs2a + figs2b
 
@@ -209,7 +214,8 @@ ggsave(file = file.path(docs_data, "Human_Protein_Atlas/FigS2.eps"), plot = figs
 
 ###FIGURE S3
 
-figs3 <- HPA_prop_plot_discon
+figs3 <- HPA_prop_plot_discon +
+  coord_flip()
 
 ggsave(file = file.path(docs_data, "Human_Protein_Atlas/FigS3.eps"), plot = figs3, width = 5, height = 5, 
        units = "in", dpi = 600, family = "Times", device = postscript, paper = "special", horizontal = FALSE)

@@ -1,8 +1,16 @@
 #######################################################
 # 6d. Significance Testing for Reactome Enrichment Analysis
+# Concordant vs Discordant:
 # Creating 2x2 contingency tables and running the Fisher's exact test to 
 # see significance in the enrichment analyses
+# All categories:
+# Comparing distribution of 4 categories within each class against distribution
+# within all other classes - Fisher test
 #######################################################
+# To note:
+
+# Some of the genes are members of multiple group. This is against the assumptions
+# of the fisher test. It is worth noting this and interpreting with caution
 
 #######################################################
 #Load in libraries
@@ -12,6 +20,7 @@ library(dotenv)
 library(data.table)
 library(dplyr)
 library(gt)
+library(webshot)
 
 #######################################################
 # Initialising file paths
@@ -30,30 +39,32 @@ docs_data <- Sys.getenv("docsdir")
 QTLs_reactome <- fread(file.path(processed_data, "Reactome/Reactome_labelled_QTLs.csv"))
 
 #######################################################
+# Concordance vs Discordant
+#######################################################
+#######################################################
 # Creating 2X2 Contingency Tables
 #######################################################
 
-QTLs_reactome <- QTLs_reactome %>%
-  dplyr::select("type", "Event (Pathway or Reaction) Name")
-QTLs_reactome <- QTLs_reactome[which(QTLs_reactome$type == "concordant" | QTLs_reactome$type == "discordant"),]
+QTLs_reactome_discon <- QTLs_reactome %>%
+  dplyr::select("type", "Event (Pathway or Reaction) Name") %>% 
+  filter(type == "concordant" | type == "discordant")
 
 # Unique Blood Groups
-subgroups <- unique(QTLs_reactome$`Event (Pathway or Reaction) Name`)
+subgroups <- unique(QTLs_reactome_discon$`Event (Pathway or Reaction) Name`)
 
 # Prepare results list
 results <- list()
 
 for (sub in subgroups) {
   # Create logical vectors
-  in_sub <- QTLs_reactome$`Event (Pathway or Reaction) Name` == sub
-  in_Con <- QTLs_reactome$type == 'concordant'
-  in_Dis <- QTLs_reactome$type == 'discordant'
-  
+  in_sub <- QTLs_reactome_discon$`Event (Pathway or Reaction) Name` == sub
+  in_Con <- QTLs_reactome_discon$type == 'concordant'
+
   # Build the 2x2 table
   a <- sum(in_sub & in_Con)
-  b <- sum(in_sub & in_Dis)
+  b <- sum(in_sub & !in_Con)
   c <- sum(!in_sub & in_Con)
-  d <- sum(!in_sub & in_Dis)
+  d <- sum(!in_sub & !in_Con)
   
   table_2x2 <- matrix(c(a, b, c, d), nrow = 2, byrow = TRUE)
   
@@ -82,7 +93,8 @@ results_df <- bind_rows(results)
 # Apply Bonferroni correction
 results_df <- results_df %>%
   mutate(Adj_P_Bonferroni = p.adjust(P_Value, method = "bonferroni")) %>%
-  dplyr::select("Subgroup", "P_Value", "Adj_P_Bonferroni")
+  mutate(Adj_P_BH_FDR = p.adjust(P_Value, method = "BH")) %>% 
+  dplyr::select("Subgroup", "P_Value", "Adj_P_Bonferroni", "Adj_P_BH_FDR")
 
 #######################################################
 # Create gt table
@@ -95,13 +107,18 @@ results_gt <- results_df %>%
     subtitle = md("Pathway Involvement")
   ) %>%
   fmt_number(
-    columns = c(P_Value),
+    columns = c(P_Value, Adj_P_Bonferroni, Adj_P_BH_FDR),
     decimals = 4
   ) %>%
   cols_label(
-    Subgroup = "Protein Class",
+    Subgroup = "Pathway",
     P_Value = "P-Value",
-    Adj_P_Bonferroni = "Adjusted P-Value"
+    Adj_P_Bonferroni = "Bonferroni Adjusted P-Value",
+    Adj_P_BH_FDR = "FDR Adjusted P-Value"
+  ) %>%
+  tab_options(
+    data_row.padding = px(2),
+    table.font.size = px(11)
   )
 
 #######################################################
@@ -118,10 +135,10 @@ reactome_summary <- fread(file.path(processed_data, "Reactome/Reactome_summary.c
 
 # Summary table for pathways with >10 Genes involved
 
-reactome_summary <- reactome_summary[rowSums(reactome_summary[,2:5]) > 10,]
+reactome_summary_sig <- reactome_summary[rowSums(reactome_summary[,2:5]) > 10,]
 
 results_df_sig <- results_df %>% 
-  filter(Subgroup %in% reactome_summary$`Event (Pathway or Reaction) Name`) %>% 
+  filter(Subgroup %in% reactome_summary_sig$`Event (Pathway or Reaction) Name`) %>% 
   arrange(Subgroup)
 
 #######################################################
@@ -135,13 +152,14 @@ results_gt_sig <- results_df_sig %>%
     subtitle = md("Pathway Involvement")
   ) %>%
   fmt_number(
-    columns = c(P_Value),
+    columns = c(P_Value, Adj_P_Bonferroni, Adj_P_BH_FDR),
     decimals = 4
   ) %>%
   cols_label(
-    Subgroup = "Protein Class",
+    Subgroup = "Pathway",
     P_Value = "P-Value",
-    Adj_P_Bonferroni = "Adjusted P-Value"
+    Adj_P_Bonferroni = "Bonferroni Adjusted P-Value",
+    Adj_P_BH_FDR = "FDR Adjusted P-Value"
   ) %>%
   tab_options(
     data_row.padding = px(2),
@@ -153,3 +171,113 @@ results_gt_sig <- results_df_sig %>%
 #######################################################
 
 gtsave(results_gt_sig, file.path(docs_data, "Reactome/Reactome_Fisher_Test_Sig.png"))
+
+#######################################################
+# All Categories
+#######################################################
+
+#######################################################
+# Creating 4X2 Contingency Tables
+#######################################################
+
+pvals <- c()
+
+for (i in 1:nrow(reactome_summary)){
+  group <- as.numeric(reactome_summary[i, -1])
+  
+  others <- as.numeric(colSums(reactome_summary[-i, -1]))
+  
+  tbl <- rbind(group, others)
+  
+  colnames(tbl) <- colnames(reactome_summary[ ,-1])
+  
+  rownames(tbl) <- c(reactome_summary$`Event (Pathway or Reaction) Name`[i], "Others")
+  
+#######################################################
+# Fisher's Exact Test
+#######################################################
+  
+  test <- fisher.test(tbl)
+  
+  pvals[i] <- test$p.value
+}
+
+# Combine
+results <- data.frame(
+  Group = reactome_summary$`Event (Pathway or Reaction) Name`,
+  P_Value = pvals
+)
+
+# Apply Multiple Testing Correction
+results <- results %>%
+  mutate(Adj_P_Bonferroni = p.adjust(P_Value, method = "bonferroni")) %>%
+  mutate(Adj_P_BH_FDR = p.adjust(P_Value, method = "BH"))
+
+results <- results[order(results$Adj_P_BH_FDR), ]
+
+#######################################################
+# Create gt table
+#######################################################
+
+# Create gt table
+results_gt_all <- results %>%
+  gt() %>%
+  tab_header(
+    title = md("Fisher's Exact Test Results"),
+    subtitle = md("Pathway Involvement")
+  ) %>%
+  fmt_number(
+    columns = c(P_Value, Adj_P_Bonferroni, Adj_P_BH_FDR),
+    decimals = 4
+  ) %>%
+  cols_label(
+    Group = "Protein Class",
+    P_Value = "P-Value",
+    Adj_P_Bonferroni = "Bonferroni Adjusted P-Value",
+    Adj_P_BH_FDR = "FDR Adjusted P-Value"
+  )
+
+#######################################################
+# Save
+#######################################################
+
+gtsave(results_gt_all, file.path(docs_data, "Reactome/Reactome_Fisher_Test_All.png"))
+
+#######################################################
+# For significant pathways
+#######################################################
+
+results_sig <- results %>% 
+  filter(Group %in% reactome_summary_sig$`Event (Pathway or Reaction) Name`) %>% 
+  arrange(Group)
+
+#######################################################
+# Create gt table
+#######################################################
+
+results_gt_all_sig <- results_sig %>%
+  gt() %>%
+  tab_header(
+    title = md("Fisher's Exact Test Results"),
+    subtitle = md("Pathway Involvement")
+  ) %>%
+  fmt_number(
+    columns = c(P_Value, Adj_P_Bonferroni, Adj_P_BH_FDR),
+    decimals = 4
+  ) %>%
+  cols_label(
+    Group = "Pathway",
+    P_Value = "P-Value",
+    Adj_P_Bonferroni = "Bonferroni Adjusted P-Value",
+    Adj_P_BH_FDR = "FDR Adjusted P-Value"
+  ) %>%
+  tab_options(
+    data_row.padding = px(2),
+    table.font.size = px(11)
+  )
+
+#######################################################
+# Save
+#######################################################
+
+gtsave(results_gt_all_sig, file.path(docs_data, "Reactome/Reactome_Fisher_Test_All_Sig.png"))

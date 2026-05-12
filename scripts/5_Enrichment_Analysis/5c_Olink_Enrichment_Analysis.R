@@ -114,6 +114,8 @@ olink_summary <- merge(olink_summary, QTLs_protein_function_eQTL_dropped, by = '
 olink_summary <- merge(olink_summary, QTLs_protein_function_pQTL_dropped, by = 'Class', all = T)
 olink_summary[is.na(olink_summary)] <- 0 #Removing NAs
 
+olink_summary$Class <- gsub("_", " ", olink_summary$Class)
+
 #Save
 
 olink_summary_tab <- olink_summary%>%
@@ -172,8 +174,8 @@ olink_plot <- olink_plot %>%
 
 olink_prop_plot <- ggplot(olink_plot, aes(fill=type_plot, y=prop_plot, x=Class)) + 
   geom_bar(position="dodge", stat="identity") +
-  theme(text = element_text(size=10, family = "Times"),
-        axis.text.x = element_text(size=8, angle=90, hjust = 1, vjust = 0.5)) +
+  theme(text = element_text(size=8, family = "Times"),
+        axis.text.x = element_text(size=8)) +
   labs(y = "Proportion of Concordance Category", x = "Protein Class", fill = "Concordance Category")
 
 #Olink Plot 1b - Con/Dis Groups only
@@ -182,8 +184,8 @@ olink_plot_discon <- olink_plot[which(olink_plot$type_plot == "Concordant" | oli
 
 olink_prop_plot_discon <- ggplot(olink_plot_discon, aes(fill=type_plot, y=prop_plot, x=Class)) + 
   geom_bar(position="dodge", stat="identity") +
-  theme(text = element_text(size=10, family = "Times"),
-        axis.text.x = element_text(size=8, angle=90, hjust = 1, vjust = 0.5)) +
+  theme(text = element_text(size=8, family = "Times"),
+        axis.text.x = element_text(size=8)) +
   labs(y = "Proportion of Concordance Category", x = "Protein Class", fill = "Concordance Category")
 
 #Plotting concordance categories as a proportion of each protein class
@@ -211,14 +213,15 @@ olink_plot_stacked <- olink_plot_stacked %>%
                names_to = "type_plot", values_to = "prop_plot") %>% 
   mutate(num_plot = olink_num$num_plot)
 
+olink_plot_stacked$num_plot <- gsub("^0$", "", olink_plot_stacked$num_plot)
 
 #Olink Plot 2 - Stacked plot
 
 olink_prop_plot_stacked <- ggplot(olink_plot_stacked, aes(fill=type_plot, y=prop_plot, x=Class, label=num_plot)) + 
   geom_bar(position="stack", stat="identity") +
-  theme(text = element_text(size=10, family = "Times"),
-        axis.text.x = element_text(size=8, angle=90, hjust = 1, vjust = 0.5)) +
-  geom_text(size = 3, position = position_stack(vjust = 0.5), check_overlap = TRUE, angle = 90, family = "Times") +
+  theme(text = element_text(size=8, family = "Times"),
+        axis.text.x = element_text(size=8)) +
+  geom_text(size = 2, position = position_stack(vjust = 0.5), check_overlap = TRUE, family = "Times") +
   labs(y = "Proportion of Protein Class", x = "Protein Class", fill = "Concordance Category")
 
 #######################################################
@@ -228,9 +231,12 @@ olink_prop_plot_stacked <- ggplot(olink_plot_stacked, aes(fill=type_plot, y=prop
 ###FIGURE 3
 
 fig3a <- olink_prop_plot +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  coord_flip()
 
-fig3b <- olink_prop_plot_stacked
+fig3b <- olink_prop_plot_stacked +
+  theme(axis.title.y = element_blank()) +
+  coord_flip()
 
 fig3 <- fig3a + fig3b
 
@@ -241,7 +247,8 @@ ggsave(file = file.path(docs_data, "Olink/Fig3.eps"), plot = fig3, width = 5.2, 
 
 ###FIGURE S4
 
-figs4 <- olink_prop_plot_discon
+figs4 <- olink_prop_plot_discon +
+  coord_flip()
 
 ggsave(file = file.path(docs_data, "Olink/FigS4.eps"), plot = figs4, width = 4, height = 4, 
        units = "in", dpi = 600, family = "Times", device = postscript, paper = "special", horizontal = FALSE)

@@ -193,8 +193,8 @@ reactome_plot_sig <- reactome_plot_sig %>%
 
 reactome_prop_plot <- ggplot(reactome_plot_sig, aes(fill=type_plot, y=prop_plot, x=`Event (Pathway or Reaction) Name`)) + 
   geom_bar(position="dodge", stat="identity") +
-  theme(text = element_text(size=10, family = "Times"),
-        axis.text.x = element_text(size=8, angle=90, hjust = 1, vjust = 0.5, family = "Times")) +
+  theme(text = element_text(size=8, family = "Times"),
+        axis.text.x = element_text(size=8, family = "Times")) +
   labs(y = "Proportion of Concordance Category", x = "Pathway", fill = "Concordance Category")
 
 #Reactome Plot 1b - For pathways with over 2% of at least one con group in it
@@ -239,8 +239,8 @@ reactome_plot_discon_sig <- reactome_plot_discon_sig %>%
 
 reactome_prop_plot_discon <- ggplot(reactome_plot_discon_sig, aes(fill=type_plot, y=prop_plot, x=`Event (Pathway or Reaction) Name`)) + 
   geom_bar(position="dodge", stat="identity") +
-  theme(text = element_text(size=10, family = "Times"),
-        axis.text.x = element_text(size=8, angle=90, hjust = 1, vjust = 0.5)) +
+  theme(text = element_text(size=8, family = "Times"),
+        axis.text.x = element_text(size=8)) +
   labs(y = "Proportion of Concordance Category", x = "Pathway", fill = "Concordance Category")
 
 #Reactome Plot 1d - Pathways with multiple QTLs involved, Discon only
@@ -278,13 +278,15 @@ reactome_num <- reactome_summary %>%
 reactome_plot_stacked <- reactome_plot_stacked %>% 
   left_join(reactome_num, by = c("Event (Pathway or Reaction) Name", "type_plot"))
 
+reactome_plot_stacked$num_plot <- gsub("^0$", "", reactome_plot_stacked$num_plot)
+
 #Reactome Plot 2 - Stacked Plot
 
 reactome_prop_plot_stacked <- ggplot(reactome_plot_stacked, aes(fill=type_plot, y=prop_plot, x=`Event (Pathway or Reaction) Name`, label=num_plot)) + 
   geom_bar(position="stack", stat="identity") +
-  theme(text = element_text(size=10, family = "Times"),
-        axis.text.x = element_text(size=8, angle=90, hjust = 1, vjust = 0.5)) +
-  geom_text(size = 3, position = position_stack(vjust = 0.5), check_overlap = TRUE, angle = 90, family = "Times") +
+  theme(text = element_text(size=8, family = "Times"),
+        axis.text.x = element_text(size=8)) +
+  geom_text(size = 2, position = position_stack(vjust = 0.5), check_overlap = TRUE, family = "Times") +
   labs(y = "Proportion of Pathway", x = "Pathway", fill = "Concordance Category")
 
 #Reactome Plot 2b - Pathways with multiple QTLs involved
@@ -305,15 +307,21 @@ reactome_prop_plot_stacked <- ggplot(reactome_plot_stacked, aes(fill=type_plot, 
 ###FIGURE 4
 
 fig4a <- reactome_prop_plot +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  coord_flip()
 
-fig4b <- reactome_prop_plot_stacked
+fig4b <- reactome_prop_plot_stacked +
+  theme(axis.title.y = element_blank()) +
+  coord_flip()
 
 fig4 <- fig4a + fig4b
 
 fig4 <- fig4 & theme(plot.margin = unit(c(2, 2, 2, 2), "pt"))
 
-ggsave(file = file.path(docs_data, "Reactome/Fig4.eps"), plot = fig4, width = 7.5, height = 5.5, 
+# Have changed width here from 7.5 to 15 to visualise - need to check figure reqs
+# May have to shorten some of the names to visualise in 7.5
+
+ggsave(file = file.path(docs_data, "Reactome/Fig4.eps"), plot = fig4, width = 15, height = 5.5, 
        units = "in", dpi = 600, family = "Times", device = postscript, paper = "special", horizontal = FALSE)
 
 ###FIGURE S5
@@ -330,12 +338,13 @@ ggsave(file = file.path(docs_data, "Reactome/Fig4.eps"), plot = fig4, width = 7.
 
 ###FIGURE S6
 
-figs6a <- reactome_prop_plot_discon #+
+figs6a <- reactome_prop_plot_discon +
+  coord_flip()#+
 #  theme(legend.position = "none")
 
 #figs6b <- reactome_prop_plot_discon_sig
 
 figs6 <- figs6a #+ figs6b
 
-ggsave(file = file.path(docs_data, "Reactome/FigS6.eps"), plot = figs6, width = 27, height = 8.75, 
+ggsave(file = file.path(docs_data, "Reactome/FigS6.eps"), plot = figs6, width = 10, height = 8.75, 
        units = "in", dpi = 600, family = "Times", device = postscript, paper = "special", horizontal = FALSE)

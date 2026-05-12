@@ -196,9 +196,9 @@ OT_plot <- OT_plot %>%
 
 OT_prop_plot <- ggplot(OT_plot, aes(x = blood_plot, y = prop_plot, fill = type_plot)) +
   geom_bar(stat = "identity", position = "dodge") +
-  theme(text = element_text(size = 10, family = "Times"),
-        axis.text.x = element_text(size = 8, angle = 90, hjust = 1, vjust = 0.5)) +
-  labs(y = "Proportion of Concordance Category Exceeding Threshold", x = "Blood Expression/TPM", fill = "Concordance Category")
+  theme(text = element_text(size = 8, family = "Times"),
+        axis.text.x = element_text(size = 8)) +
+  labs(y = "Proportion of Concordance Category", x = "Blood Expression/TPM", fill = "Concordance Category")
 
 # Open Target Plot 1b - Con/Dis groups only
 
@@ -207,9 +207,9 @@ OT_plot_discon <- OT_plot %>%
 
 OT_prop_plot_discon <- ggplot(OT_plot_discon, aes(x=blood_plot, y=prop_plot, fill=type_plot)) + 
   geom_bar(position="dodge", stat="identity") +
-  theme(text = element_text(size=10, family = "Times"),
-        axis.text.x = element_text(size=8, angle=90, hjust = 1, vjust = 0.5)) +
-  labs(y = "Proportion of Concordance Category Exceeding Threshold", x = "Blood Expression/TPM", fill = "Concordance Category")
+  theme(text = element_text(size=8, family = "Times"),
+        axis.text.x = element_text(size=8)) +
+  labs(y = "Proportion of Concordance Category", x = "Blood Expression/TPM", fill = "Concordance Category")
 
 #Plotting concordance categories as a proportion of each blood group
 #Proportion = N QTLs in blood group / total number of QTLs in blood group
@@ -232,14 +232,16 @@ OT_plot_stacked <- OT_plot_stacked %>%
   mutate(blood_plot = c(rep(">0", 4), rep(">10", 4), rep(">100", 4), rep(">1000", 4), rep(">10000", 4), rep(">100000", 4)),
          num_plot = c(OT_summary[1,2:5], OT_summary[2,2:5], OT_summary[3,2:5], OT_summary[4,2:5], OT_summary[5,2:5], OT_summary[6,2:5])) 
 
+OT_plot_stacked$num_plot <- gsub("^0$", "", OT_plot_stacked$num_plot)
+
 # Open Target Plot 2 - Stacked plot
 
 OT_prop_plot_stacked <- ggplot(OT_plot_stacked, aes(fill=type_plot, y=prop_plot, x=blood_plot, label = num_plot)) + 
   geom_bar(position="stack", stat="identity") +
-  theme(text = element_text(size=10, family = "Times"),
-        axis.text.x = element_text(size=8, angle=90, hjust = 1, vjust = 0.5)) +
-  geom_text(size = 3, position = position_stack(vjust = 0.5), check_overlap = TRUE, angle = 90, family = "Times") +
-  labs(y = "Proportion of Concordance Category Exceeding Threshold", x = "Blood Expression/TPM", fill = "Concordance Category")
+  theme(text = element_text(size=8, family = "Times"),
+        axis.text.x = element_text(size=8)) +
+  geom_text(size = 2, position = position_stack(vjust = 0.5), check_overlap = TRUE, family = "Times") +
+  labs(y = "Proportion of Blood Expression Group", x = "Blood Expression/TPM", fill = "Concordance Category")
 
 #######################################################
 #Saving OT Figures
@@ -248,9 +250,12 @@ OT_prop_plot_stacked <- ggplot(OT_plot_stacked, aes(fill=type_plot, y=prop_plot,
 ###FIGURE 2
 
 fig2a <- OT_prop_plot +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  coord_flip()
 
-fig2b <- OT_prop_plot_stacked
+fig2b <- OT_prop_plot_stacked +
+  theme(axis.title.y = element_blank()) +
+  coord_flip()
 
 fig2 <- fig2a + fig2b
 
@@ -261,7 +266,8 @@ ggsave(file = file.path(docs_data, "Open_Target/Fig2.eps"), plot = fig2, width =
 
 ###FIGURE S1
 
-figs1 <- OT_prop_plot_discon
+figs1 <- OT_prop_plot_discon +
+  coord_flip()
 
 ggsave(file = file.path(docs_data, "Open_Target/FigS1.eps"), plot = figs1, width = 3.5, height = 4, 
        units = "in", dpi = 600, family = "Times", device = postscript, paper = "special", horizontal = FALSE)

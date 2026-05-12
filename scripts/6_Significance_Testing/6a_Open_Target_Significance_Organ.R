@@ -1,24 +1,4 @@
 #######################################################
-# 6a. Significance Testing for Open Target Enrichment Analysis
-# Concordant vs Discordant:
-# Creating 2x2 contingency tables and running the Fisher's exact test to 
-# see significance in the enrichment analyses
-# All categories:
-# Comparing distribution of 4 categories within each class against distribution
-# within all other classes - Fisher test
-#######################################################
-
-#######################################################
-#Load in libraries
-#######################################################
-
-library(dotenv)
-library(data.table)
-library(dplyr)
-library(gt)
-library(webshot)
-
-#######################################################
 # Initialising file paths
 #######################################################
 
@@ -41,20 +21,20 @@ QTLs_OT <- fread(file.path(processed_data, "Open_Target/OT_labelled_QTLs.csv"))
 #######################################################
 
 QTLs_OT_discon <- QTLs_OT %>%
-  dplyr::select("Concordance_Group", "Threshold") %>% 
+  dplyr::select("Concordance_Group", "top_organ") %>% 
   filter(Concordance_Group == "concordant" | Concordance_Group == "discordant")
 
 # Unique Blood Groups
-subgroups <- unique(QTLs_OT_discon$Threshold)
+subgroups <- unique(QTLs_OT_discon$top_organ)
 
 # Prepare results list
 results <- list()
 
 for (sub in subgroups) {
   # Create logical vectors
-  in_sub <- QTLs_OT_discon$Threshold == sub
+  in_sub <- QTLs_OT_discon$top_organ == sub
   in_Con <- QTLs_OT_discon$Concordance_Group == 'concordant'
-
+  
   # Build the 2x2 table
   a <- sum(in_sub & in_Con)
   b <- sum(in_sub & !in_Con)
@@ -68,8 +48,6 @@ for (sub in subgroups) {
 #######################################################
   
   fisher_result <- fisher.test(table_2x2)
-  
-  sub <- paste0(">", as.integer(sub), "TMP")
   
   # Append results
   results[[sub]] <- data.frame(
@@ -92,9 +70,6 @@ results_df <- results_df %>%
   mutate(Adj_P_BH_FDR = p.adjust(P_Value, method = "BH")) %>% 
   dplyr::select("Subgroup", "P_Value", "Adj_P_Bonferroni", "Adj_P_BH_FDR")
 
-results_df$Subgroup <- factor(results_df$Subgroup, levels = c(">0TMP", ">10TMP", ">100TMP", ">1000TMP", ">10000TMP", ">100000TMP"))
-results_df <- results_df[order(results_df$Subgroup), ]
-
 #######################################################
 # Create gt table
 #######################################################
@@ -103,7 +78,7 @@ results_gt <- results_df %>%
   gt() %>%
   tab_header(
     title = md("Fisher's Exact Test Results"),
-    subtitle = md("Blood Expression")
+    subtitle = md("Organ Expression")
   ) %>%
   fmt_number(
     columns = c(P_Value, Adj_P_Bonferroni, Adj_P_BH_FDR),
@@ -120,7 +95,7 @@ results_gt <- results_df %>%
 # Save
 #######################################################
 
-gtsave(results_gt, file.path(docs_data, "Open_Target/OT_Fisher_Test.png"))
+gtsave(results_gt, file.path(docs_data, "Open_Target/OT_Organ_Fisher_Test.png"))
 
 #######################################################
 # All Categories
@@ -131,8 +106,8 @@ gtsave(results_gt, file.path(docs_data, "Open_Target/OT_Fisher_Test.png"))
 #######################################################
 
 QTLs_OT_all <- dcast(
-  QTLs_OT[, .N, by = .(Threshold, Concordance_Group)],
-  Threshold ~ Concordance_Group,
+  QTLs_OT[, .N, by = .(top_organ, Concordance_Group)],
+  top_organ ~ Concordance_Group,
   value.var = "N",
   fill = 0
 )
@@ -152,7 +127,7 @@ for (i in 1:nrow(QTLs_OT_all)){
   
   colnames(tbl) <- colnames(QTLs_OT_all[ ,-1])
   
-  rownames(tbl) <- c(QTLs_OT_all$Threshold[i], "Others")
+  rownames(tbl) <- c(QTLs_OT_all$top_organ[i], "Others")
   
   #######################################################
   # Fisher's Exact Test
@@ -165,7 +140,7 @@ for (i in 1:nrow(QTLs_OT_all)){
 
 # Combine
 results <- data.frame(
-  Group = QTLs_OT_all$Threshold,
+  Group = QTLs_OT_all$top_organ,
   P_Value = pvals
 )
 
@@ -173,8 +148,6 @@ results <- data.frame(
 results <- results %>%
   mutate(Adj_P_Bonferroni = p.adjust(P_Value, method = "bonferroni")) %>%
   mutate(Adj_P_BH_FDR = p.adjust(P_Value, method = "BH")) 
-
-results$Group <- paste0(">", as.integer(results$Group), "TMP")
 
 #######################################################
 # Create gt table
@@ -185,7 +158,7 @@ results_gt_all <- results %>%
   gt() %>%
   tab_header(
     title = md("Fisher's Exact Test Results"),
-    subtitle = md("Blood Expression")
+    subtitle = md("Organ Expression")
   ) %>%
   fmt_number(
     columns = c(P_Value, Adj_P_Bonferroni, Adj_P_BH_FDR),
@@ -202,4 +175,4 @@ results_gt_all <- results %>%
 # Save
 #######################################################
 
-gtsave(results_gt_all, file.path(docs_data, "Open_Target/OT_Fisher_Test_All.png"))
+gtsave(results_gt_all, file.path(docs_data, "Open_Target/OT_Organ_Fisher_Test_All.png"))
