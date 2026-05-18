@@ -1,4 +1,18 @@
 #######################################################
+# 5a. Enrichment Analysis of Colocalised QTL Pairs
+# Datasets:
+#   a. Open Targets: Top Organ Expression
+##
+# As there is little variation between concordance of datasets selected on pQTLs
+# and eQTLs and those with all available independent SNPs and those with only 1
+# SNP per gene, the rest of the enrichment analysis is carried out on all available
+# independent SNPs selected from pQTL data:
+# pQTL_concordance.csv from 4_Naive_Concordance_Test.R
+##
+#######################################################
+
+
+#######################################################
 # Initialising file paths
 #######################################################
 
